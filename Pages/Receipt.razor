@@ -1,0 +1,154 @@
+﻿@page "/receipt/{ReceiptId}"
+@using ReceiptApp.Services
+@using ReceiptApp.Model
+@using System.Globalization
+@inject ReceiptQuery Query
+@inject ReceiptCommand Command
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+@if (isLoading)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <h2> Receipt (<span>@receiptDetails.Id</span>)</h2>
+
+    <EditForm EditContext="@editContext" class="" OnSubmit="@HandleSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        <p class="commands">
+            @if (isUpdating)
+            {
+                <span class="spinner-border text-info" role="status" title="Saving changes">
+                    <span class="sr-only">Saving changes</span>
+                </span>
+            }
+            <button type="submit" class="btn btn-primary" disabled="@isUpdating">Save</button>
+        </p>
+        <section>
+            <div class="form-row">
+                <label for="Tags" class="col-sm-2 col-form-label">Tags:</label>
+                <div class="col-sm-10">
+                    <InputText id="Tags" @bind-Value="Tags" class="form-control" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label for="Day" class="col-sm-2 col-form-label">Day:</label>
+                <div class="col-sm-10">
+                    <InputDate id="Day" @bind-Value="Day" class="form-control" />
+                </div>
+            </div>
+            <div class="form-row">
+                <label for="Total" class="col-sm-2 col-form-label">Total:</label>
+                <div class="col-sm-10">
+                    <InputNumber id="Total" @bind-Value="receiptDetails.Total" @bind-Value:format="F2"
+                    class="form-control" />
+                </div>
+            </div>
+            <h3>Shop</h3>
+            <div class="form-row">
+                <label for="ShopName" class="col-sm-2 col-form-label">Name:</label>
+                <div class="col-sm-10">
+                    <InputText id="ShopName" @bind-Value="receiptDetails.Shop.Name" class="form-control" />
+                </div>
+            </div>
+            <div class="form-row">
+                <label for="ShopOwner" class="col-sm-2 col-form-label">Owner:</label>
+                <div class="col-sm-10">
+                    <InputText id="ShopOwner" @bind-Value="receiptDetails.Shop.Owner" class="form-control" />
+                </div>
+            </div>
+            <div class="form-row">
+                <label for="ShopAddress" class="col-sm-2 col-form-label">Address:</label>
+                <div class="col-sm-10">
+                    <InputText id="ShopAddress" @bind-Value="receiptDetails.Shop.Address" class="form-control" />
+                </div>
+            </div>
+            <div class="form-row">
+                <label for="ShopCity" class="col-sm-2 col-form-label">City:</label>
+                <div class="col-sm-10">
+                    <InputText id="ShopCity" @bind-Value="receiptDetails.Shop.City" class="form-control" />
+                </div>
+            </div>
+            <div class="form-row">
+                <label for="ShopPhone" class="col-sm-2 col-form-label">Phone:</label>
+                <div class="col-sm-10">
+                    <InputText id="ShopPhone" @bind-Value="receiptDetails.Shop.Phone" class="form-control" />
+                </div>
+            </div>
+            <div class="form-row">
+                <label for="ShopVat" class="col-sm-2 col-form-label">VAT:</label>
+                <div class="col-sm-10">
+                    <InputText id="ShopVat" @bind-Value="receiptDetails.Shop.VAT" class="form-control" />
+                </div>
+            </div>
+        </section>
+
+        <h3>Items</h3>
+        <section>
+            @foreach (var item in receiptDetails.Items)
+            {
+                <div class="form-row">
+                    <label for="ShopVat" class="col-sm-2 col-form-label">Name:</label>
+                    <div class="col-sm-4">
+                        <InputText id="ShopVat" @bind-Value="item.Name" class="form-control" />
+                    </div>
+                    <label for="ShopVat" class="col-sm-1 col-form-label">VAT:</label>
+                    <div class="col-sm-2">
+                        <InputNumber id="ShopVat" @bind-Value="item.VAT" @bind-Value:format="F2" class="form-control" />
+                    </div>
+                    <label for="ShopVat" class="col-sm-1 col-form-label">Price:</label>
+                    <div class="col-sm-2">
+                        <InputNumber id="ShopVat" @bind-Value="item.Price" @bind-Value:format="F2" class="form-control" />
+                    </div>
+                </div>
+            }
+        </section>
+    </EditForm>
+}
+
+@code {
+
+    [Parameter]
+    public string ReceiptId { get; set; }
+    private ReceiptDetails receiptDetails;
+    private DateTime? Day { get; set; }
+
+    private string Tags { get; set; }
+    private bool isLoading = false;
+    private EditContext editContext;
+    private bool isUpdating = false;
+
+    private const string DateFormat = "MM/dd/yyyy";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrEmpty(ReceiptId)) return;
+        isLoading = true;
+        receiptDetails = await Query.GetReceipt(ReceiptId);
+        CultureInfo provider = CultureInfo.InvariantCulture;
+        Day = DateTime.ParseExact(receiptDetails.Day, DateFormat, provider);
+        Tags = receiptDetails.Tags != null ? string.Join(";", receiptDetails.Tags) : string.Empty;
+        editContext = new(receiptDetails);
+        isLoading = false;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (editContext.Validate())
+        {
+            isUpdating = true;
+            receiptDetails.Day = Day.Value.ToString(DateFormat);
+
+            receiptDetails.Tags = string.IsNullOrEmpty(Tags) ? new List<string>() : Tags.Split(";");
+            await Command.Save(ReceiptId, receiptDetails);
+            isUpdating = false;
+        }
+        else
+        {
+
+        }
+    }
+}

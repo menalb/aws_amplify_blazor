@@ -1,17 +1,35 @@
 @import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
-
-html, body {
+html,
+body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-a, .btn-link {
-    color: #0366d6;
+a,
+.btn-link {
+    color: #fd7e14;
+}
+
+a:hover,
+.btn-link:hover {
+    color: black;
 }
 
 .btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    color: black;
+    background-color: #fd7e14;
+    border-color: #fff;
+}
+
+.btn-primary:hover {
+    color: #fd7e14;
+    background-color: black;
+    border-color: #fff;
+}
+
+.form-control-file {
+    color: black;
+    background-color: #fd7e14;
+    border-color: #fff;
 }
 
 .content {
@@ -42,9 +60,9 @@ a, .btn-link {
     z-index: 1000;
 }
 
-    #blazor-error-ui .dismiss {
-        cursor: pointer;
-        position: absolute;
-        right: 0.75rem;
-        top: 0.5rem;
-    }
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}

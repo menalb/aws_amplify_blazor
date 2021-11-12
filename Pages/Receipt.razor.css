@@ -1,0 +1,8 @@
+.commands {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.commands button {
+    margin-left: 3rem;
+}

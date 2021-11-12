@@ -1,13 +1,25 @@
 @inherits LayoutComponentBase
 
 <div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
 
     <div class="main">
         <div class="top-row px-4">
-            <a href="http://blazor.net" target="_blank" class="ml-md-auto">About</a>
+            <span class="actions">
+                <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                    <i class="fas fa-home"></i> Home
+                </NavLink>
+                <AuthorizeView>
+                    <NavLink title="Receipts" class="nav-link" href="receipts">
+                        <i class="fas fa-receipt"></i> Receipts
+                    </NavLink>
+                    <NavLink title="Processing Receips" class="nav-link" href="jobs">
+                        <i class="fas fa-cog"></i> Jobs
+                    </NavLink>
+                </AuthorizeView>
+            </span>
+            <span class="login">
+                <LoginDisplay />
+            </span>
         </div>
 
         <div class="content px-4">

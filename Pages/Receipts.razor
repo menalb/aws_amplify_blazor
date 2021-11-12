@@ -1,0 +1,130 @@
+﻿@page "/receipts"
+@page "/receipts/{JobId}"
+@using Model
+@using Services
+@using System.Net.Http.Headers
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject TokenService TokenService
+@inject ReceiptQuery Query
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+
+<h1>Receipts</h1>
+
+<div class="file-input-group input-group mb-2">
+    <div class="custom-file">
+        <InputFile OnChange="@LoadFiles" class="custom-file-input" id="inputGroupFile01" />
+        <label class="custom-file-label" for="inputGroupFile01">Choose file</label>
+    </div>
+</div>
+
+@if (receipts == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col"></th>
+                <th scope="col">Date</th>
+                <th scope="col">Kind</th>                
+                <th scope="col">Shop</th>
+                <th scope="col">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var receipt in receipts)
+            {
+                <tr>
+                    <td>
+                        <NavLink title="@receipt.Id.Substring(0,8)" class="nav-link" href=@($"receipt/{receipt.Id}")>
+                            <i class="fas fa-eye"></i>
+                        </NavLink>
+                    </td>
+                    <td>@receipt.Day</td>
+                    <td title="@BuildTagsSummary(receipt.Tags)">
+                        <i class="@GetKindIcon(receipt.Tags)"></i>
+                    </td>
+                    <td>@receipt.Shop</td>
+                    <td>@receipt.Total</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+
+    [Parameter]
+    public string JobId { get; set; }
+    private IEnumerable<ReceiptSummary> receipts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        receipts = (await Query.GetAll()).OrderByDescending(receipts => receipts.Day);
+
+        if (receipts.Any() && !string.IsNullOrEmpty(JobId))
+        {
+            receipts = receipts.Where(r => r.JobId == JobId);
+        }
+    }
+
+    private string BuildTagsSummary(IEnumerable<string> tags)
+    {
+        return tags != null ? string.Join(" ", tags) : string.Empty;
+    }
+
+    private string GetKindIcon(IEnumerable<string> tags)
+    {
+        if (tags.Contains("bar"))
+        {
+            return "fas fa-coffee";
+        }
+        if (tags.Contains("shop"))
+        {
+            return "fas fa-shopping-cart";
+        }
+        return string.Empty;
+    }
+
+    private async Task LoadFiles(InputFileChangeEventArgs e)
+    {
+
+        //var url = (await Http.GetFromJsonAsync<ApiResponse>("receipt-upload")).UploadURL1;
+        var request = new HttpRequestMessage(HttpMethod.Get, "upload-receipt");
+        request.Headers.Authorization = await TokenService.BuildAuthHeader();
+
+        var response = (await Http.SendAsync(request));
+        if (response.IsSuccessStatusCode)
+        {
+            var url = (await response.Content.ReadFromJsonAsync<ApiResponse>()).UploadURL;
+
+            Console.WriteLine(e.File.Name);
+
+            using var content = new MultipartFormDataContent();
+
+            var fileContent = new StreamContent(e.File.OpenReadStream());
+
+            content.Add(content: fileContent);
+
+            using var c = new ByteArrayContent(await fileContent.ReadAsByteArrayAsync());
+            c.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
+
+            using var h = new HttpClient();
+
+            var putResponse = await h.PutAsync(url, c);
+
+            var newUploadResults = await putResponse.Content.ReadAsStringAsync();
+
+            Console.WriteLine(newUploadResults);
+        }
+    }
+
+    public class ApiResponse
+    {
+        public string Key { get; set; }
+        public string UploadURL { get; set; }
+    }
+}
