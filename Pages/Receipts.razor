@@ -105,7 +105,7 @@ else
 
             using var content = new MultipartFormDataContent();
 
-            var fileContent = new StreamContent(e.File.OpenReadStream());
+            var fileContent = new StreamContent(e.File.OpenReadStream(512000*10));
 
             content.Add(content: fileContent);
 
